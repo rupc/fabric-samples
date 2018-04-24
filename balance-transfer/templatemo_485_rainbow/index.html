@@ -7,8 +7,6 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
     <script src="//code.jquery.com/jquery.min.js"></script>
-    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
 
 <!--
 Rainbow Theme
@@ -20,48 +18,12 @@ http://www.templatemo.com/tm-485-rainbow
     <link rel="stylesheet" href="css/bootstrap.min.css">                                      <!-- Bootstrap style -->
     <link rel="stylesheet" href="css/templatemo-style.css">                                   <!-- Templatemo style -->
 
-    <link rel="stylesheet" href="//cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="//cdn.datatables.net/select/1.2.2/css/select.dataTables.min.css">
-    <script src="https://cdn.datatables.net/select/1.2.2/js/dataTables.select.min.js"></script>
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-          <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-          <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-          <![endif]-->
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/3.5.1/css/tabulator.min.css" rel="stylesheet">
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/3.5.1/js/tabulator.min.js"></script>
+          <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.css">
+          <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+
       <title>Lottery on Blockchain</title>
 
       <script type="text/javascript" charset="utf-8">
-          $("#example-table").tabulator({
-              height:205, 
-              layout:"fitColumns", 
-              columns:[ 
-                  {title:"Name", field:"name", width:150},
-                  {title:"Age", field:"age", align:"left", formatter:"progress"},
-                  {title:"Favourite Color", field:"col"},
-                  {title:"Date Of Birth", field:"dob", sorter:"date", align:"center"},
-              ],
-              rowClick:function(e, row){ 
-                  alert("Row " + row.getData().id + " Clicked!!!!");
-              },
-          });
-          var tabledata = [
-              {id:1, name:"Oli Bob", age:"12", col:"red", dob:""},
-              {id:2, name:"Mary May", age:"1", col:"blue", dob:"14/05/1982"},
-              {id:3, name:"Christine Lobowski", age:"42", col:"green", dob:"22/05/1982"},
-              {id:4, name:"Brendon Philips", age:"125", col:"orange", dob:"01/08/1980"},
-              {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
-          ];
-
-          //load sample data into the table
-          $("#example-table").tabulator("setData", tabledata);
-        $("#example-table").text("뭐고고고고?");
-
-        $( "#mytable" ).on( "click", function() {
-            console.log( "좀 떠라" );
-        });
       </script>
   </head>
 
@@ -170,9 +132,24 @@ http://www.templatemo.com/tm-485-rainbow
                 </p>    
             </div>
 
-            <div id="mytable">
-                어떤 텍스트
-            </div>
+<table id="mytable" class="display">
+    <thead>
+        <tr>
+            <th>Column 1</th>
+            <th>Column 2</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Row 1 Data 1</td>
+            <td>Row 1 Data 2</td>
+        </tr>
+        <tr>
+            <td>Row 2 Data 1</td>
+            <td>Row 2 Data 2</td>
+        </tr>
+    </tbody>
+</table>
             <!-- <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12"> -->
                     
                 <!-- <div class="tm-plan-boxes-container"> -->
@@ -346,6 +323,8 @@ http://www.templatemo.com/tm-485-rainbow
                 }); 
 
                 navbarHeight = 56;
+                console.log("waow");
+                $('#mytable').DataTable();
             }
 
             // Single Page Nav
