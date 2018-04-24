@@ -408,3 +408,18 @@ app.get('/channels', async function(req, res) {
 	let message = await query.getChannels(peer, req.username, req.orgname);
 	res.send(message);
 });
+
+app.get('/', function(req, res){
+    response_client_html(res, "index.html");
+});
+
+function response_client_html(res, filename) {
+    fs.readFile(filename, function (err, data) {
+        res.writeHead(200, {
+            'Content-Type': 'text/html',
+        });
+        res.write(data);
+        res.end();
+    });
+    logger.info(filename + " requested");
+}
