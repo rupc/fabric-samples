@@ -44,8 +44,9 @@ type lottery_event struct {
     IssueDate       string `json:IssueDate`
 	Duedate         string	`json:"Duedate"`  // UNIX timestamp
 	AnnouncementDate string	`json:"AnnouncementDate"`  // UNIX timestamp
-	NumOfMembers    string	`json:"NumOfMembers"`
+	NumOfMembers    string	`json:"NumOfMembers"` // Max number of members
 	NumOfWinners    string	`json:"NumOfWinners"`
+    NumOfRegistered string `json:"NumOfRegistered"` // Number of registerd members
 	MemberList      string	`json:"MemberList"` // Comma seperated member list
     RandomKey       string `json:"RandomKey"` // This is from input, so it's not non-deterministic
     InputHash       string `json:"InputHash"` // built from eventname, duedate, num of members, winners and member list, randomkey from server
@@ -80,13 +81,14 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
     sampleRegistered := lottery_event {
         Status: "REGISTERED",
         InputHash: "6b60d2b794860dc84148f44d479fd7c634eaf8e3396e723d5d2224c98f38f5d1",
-        EventName: "test-event1",
+        EventName: "SSLAB 친목 추첨",
         IssueDate: "1495701618",
         Duedate: "1511098413",
         AnnouncementDate: "1511198413",
         FutureBlockHeight: "400000",
-        NumOfMembers: "7",
+        NumOfMembers: "100",
         NumOfWinners: "3",
+        NumOfRegistered: "0",
         RandomKey: "241218793433130254621482405472826812551",
         VerifiableRandomkey: "UNDEFINED" ,
         MemberList: "a,b,c,d,e,f,g",
@@ -97,13 +99,14 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
     sampleEnded := lottery_event {
         Status: "REGISTERED",
         InputHash: "435df910d961f25d051a71e1daeed210cb43c31b4e92bf241a7a044bdebe50a5",
-        EventName: "Edible-Secretary",
+        EventName: "블록체인 세미나 추첨",
         IssueDate: "1498601618",
         Duedate: "1510088413",
         AnnouncementDate: "1511188413",
         FutureBlockHeight: "300000",
-        NumOfMembers: "4",
+        NumOfMembers: "1000",
         NumOfWinners: "2",
+        NumOfRegistered: "0",
         RandomKey: "26047126683174221326655007522109018381",
         VerifiableRandomkey: "UNDEFINED" ,
         MemberList: "t1,t2,t3,t4",
@@ -114,13 +117,14 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
     sampleCheck := lottery_event {
         Status: "ANNOUNCED",
         InputHash: "e284211d3c91622692531bfd860a438d21ee6a04a2f941c970d30b5bab214a30",
-        EventName: "event-checkNverify",
+        EventName: "POSTECH-SEMINAR 추첨",
         IssueDate: "1497076380", // 2017년 5월 10일 토요일 오후 3:33:00 GMT+09:00
         Duedate: "1497508380", // 2017년 5월 15일 목요일 오후 3:33:00 GMT+09:00
         AnnouncementDate: "1498804200", // 2017년 5월 30일 금요일 오후 3:30:00
         FutureBlockHeight: "473530",
-        NumOfMembers: "5",
+        NumOfMembers: "1000",
         NumOfWinners: "2",
+        NumOfRegistered: "0",
         RandomKey: "45432542334432543212154312",
         VerifiableRandomkey: "UNDEFINED" ,
         MemberList: `zQcVvDw3GnCtLlE7kGaJh+DIywBPSeWAIvwcqqZLPGw,
@@ -129,7 +133,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
                     GFlVlk0WHnBUqbGBRJpi+Smb71iWNKwCVkzHAUuyKqo=,
                     y6ifF4M2s3szUOu/gai4VGa8jbLQEbq0UPgce8ZqD6o=,`,
         WinnerList: "UNDEFINED",
-        Script: `
+        Script: "sample script2"
+        /* Script: `
         func do_determine_winner(le lottery_event) []int {
             // var im InputManifest = convert_lottery_to_im(le)
             // print_im(im)
@@ -204,7 +209,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
             }
 
             return winner_list
-        }`,
+        }`, */
     }
 
     jsonBytes, err := json.Marshal(sampleRegistered)
