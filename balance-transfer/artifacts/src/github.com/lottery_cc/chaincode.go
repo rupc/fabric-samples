@@ -133,7 +133,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
                     GFlVlk0WHnBUqbGBRJpi+Smb71iWNKwCVkzHAUuyKqo=,
                     y6ifF4M2s3szUOu/gai4VGa8jbLQEbq0UPgce8ZqD6o=,`,
         WinnerList: "UNDEFINED",
-        Script: "sample script2"
+        Script: "sample script2",
         /* Script: `
         func do_determine_winner(le lottery_event) []int {
             // var im InputManifest = convert_lottery_to_im(le)
