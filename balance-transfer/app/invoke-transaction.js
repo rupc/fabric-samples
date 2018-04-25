@@ -20,6 +20,7 @@ var util = require('util');
 var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('invoke-chaincode');
+var ret = {};
 
 var invokeChaincode = async function(peerNames, channelName, chaincodeName, fcn, args, username, org_name) {
 	logger.debug(util.format('\n============ invoke transaction on channel %s ============\n', channelName));
@@ -78,7 +79,9 @@ var invokeChaincode = async function(peerNames, channelName, chaincodeName, fcn,
 				'Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s", metadata - "%s", endorsement signature: %s',
 				proposalResponses[0].response.status, proposalResponses[0].response.message,
 				proposalResponses[0].response.payload, proposalResponses[0].endorsement.signature));
-
+            ret.payload_ = String(proposalResponses[0].response.payload);
+            // logger.info("mytest" + proposalResponses[0].response.payload);
+            // logger.info("mytest2" + ret.payload_);
 			// wait for the channel-based event hub to tell us
 			// that the commit was good or bad on each peer in our organization
 			var promises = [];
@@ -166,8 +169,9 @@ var invokeChaincode = async function(peerNames, channelName, chaincodeName, fcn,
 			'Successfully invoked the chaincode %s to the channel \'%s\' for transaction ID: %s',
 			org_name, channelName, tx_id_string);
 		logger.info(message);
-
-		return tx_id_string;
+        ret.tx_id_string_ = tx_id_string;
+        // logger.info("mytest2" + ret.payload_);
+		return ret;
 	} else {
 		let message = util.format('Failed to invoke chaincode. cause:%s',error_message);
 		logger.error(message);

@@ -285,6 +285,7 @@ app.post('/channels/:channelName/chaincodes/:chaincodeName', async function(req,
 	}
 
 	let message = await invoke.invokeChaincode(peers, channelName, chaincodeName, fcn, args, req.username, req.orgname);
+    console.log(message.payload_);
 	res.send(message);
 });
 // Query on chaincode on target peers

@@ -20,6 +20,9 @@ const optionDefinitions = [
 
 const cmd_options = commandLineArgs(optionDefinitions);
 
+var Client = require('node-rest-client').Client;
+ 
+var client = new Client();
 
 var bodyParser = require('body-parser');
 const winston = require('winston');
@@ -43,6 +46,8 @@ var app = express();
 var getScript = require("./default-script.js");
 // console.log(getScript.script);
 var appPort = 1185;
+
+var SDKWebServerAddress = "http://localhost:4000";
 
 function start_server(app, port) {
     app.listen(port, function() {
@@ -94,6 +99,10 @@ app.get('/index.html', function(req, res) {
     response_client_html(res, "templatemo_485_rainbow/index.html");
 });
 
+app.get('/elements.html', function(req, res) {
+    response_client_html(res, "templatemo_485_rainbow/elements.html");
+});
+
 app.get('/subscribe.html', function(req, res) {
     response_client_html(res, "subscribe.html");
 });
@@ -102,8 +111,76 @@ app.get('/open-lottery.html', function(req, res) {
     response_client_html(res, "open-lottery.html");
 });
 
+
+var UserInfoTable = [];
+
 app.post('/subscribe', function(req, res) {
     logger.info("/subscribe")
+    var functionName = req.body.functionName;
+    var lotteryName = req.body.lotteryName;
+    var participantName = req.body.participantName;
+    logger.info(lotteryName + " " + participantName);
+
+    const hash = crypto.createHash('sha256');
+    hash.update(participantName);
+    // hash for avoiding UTF8-Encoding
+    var identityHash = hash.digest('hex');
+    logger.info(identityHash);
+    var allData = {
+        "username" : identityHash,
+        "orgName" : "Org1",
+    };
+
+    var randomarray  = secureRandom.randomUint8Array(10)
+    var nonce = "";
+    for (var i = 0; i < randomarray.length; i++) {
+        nonce += randomarray[i].toString(16);
+    }
+
+    // REST API 호출...
+    // set content-type header and data as json in args parameter 
+    var args = {
+        data: allData,
+        headers: { "Content-Type": "application/json" }
+    };
+
+    var token;
+    var message;
+    var secret;
+
+    client.post(SDKWebServerAddress + "/users", args, function (data, response) {
+        // parsed response body as js object 
+        // console.log(data);
+        // raw response 
+        // console.log(response);
+        token = data.token;
+        message = data.message;
+        secret = data.secret;
+        logger.log(token, message, secret);
+
+
+        res.write(token);
+        res.end();
+    });
+// `curl -s -X POST http://localhost:4000/users -H "content-type: application/x-www-form-urlencoded" -d 'username=Jim&orgName=Org1'`
+
+    // Promise 써서 동기적으로 바꿔야할듯
+
+        var useridentity = {
+            lotteryName_ : lotteryName,
+            participantName_ : participantName,
+            identityHash_ : identityHash,
+            nonce_ : nonce,
+            token_ : token
+        };
+
+        UserInfoTable.push(useridentity);
+        console.log("New user added(" + UserInfoTable.length + ")");
+});
+
+app.post('/query-all-events', function(req, res) {
+    logger.info("/query-all-events requested")
+    QueryAllEvents(req, res);
 });
 
 
@@ -118,10 +195,6 @@ app.post('/check', function(req, res) {
 
 app.post('/verify', function(req, res) {
     logger.info("/verify requested");
-});
-
-app.post('/cc-query-all-events', function(req, res) {
-    logger.info("/cc-query-all-events requested")
 });
 
 function response_client_html(res, filename) {
@@ -396,7 +469,6 @@ function processAllFieldsOfTheForm(req, res) {
 }
 
 start_server(app, appPort);
-// setTimeout(e2e_test, 500);
 
 if (cmd_options.blockchain) {
     // well working function
@@ -407,3 +479,37 @@ if (cmd_options.blockchain) {
 } 
 
 
+function QueryAllEvents(req, res) {
+    var allData = {
+        "peers" : ["peer0.org1.example.com","peer1.org1.example.com"],
+        "fcn" : "invoke",
+        "args":["query_all_lottery_event_hash"]
+    };
+
+    var args = {
+        data: allData,
+        headers: { 
+            "authorization" : "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MjQ3MDQ3ODYsInVzZXJuYW1lIjoiN2MyZWNkMDdmMTU1NjQ4NDMxZTBmOTRiODkyNDdkNzEzYzU3ODZlMWU3M2U5NTNmMmZlN2VjYTM5NTM0Y2Q2ZCIsIm9yZ05hbWUiOiJPcmcxIiwiaWF0IjoxNTI0NjY4Nzg2fQ.Hz0rasJjTegWjMYVqix-whQ0TgoaaD755nHkA2vUjzU",
+            "Content-Type": "application/json" 
+        
+        }
+    };
+
+    client.post(SDKWebServerAddress + "/channels/mychannel/chaincodes/lottery", args, function (data, response) {
+        // parsed response body as js object 
+        // console.log("data = " + data);
+        // raw response 
+        // console.log("response = " + response);
+        var payload = data.payload_;
+        var tx_id = data.tx_id_string_;
+        // console.log(tx_id);
+        // console.log(JSON.stringify(data));
+        // var s = "";
+        // for (var c in payload) {
+            // s += String.fromCharCode(c);
+        // }
+        console.log(payload);
+        res.write("왜안돼니?");
+        res.end();
+    });
+}
