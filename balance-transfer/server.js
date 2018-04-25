@@ -48,6 +48,7 @@ var getScript = require("./default-script.js");
 var appPort = 1185;
 
 var SDKWebServerAddress = "http://localhost:4000";
+var SampleToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MjQ3MDQ3ODYsInVzZXJuYW1lIjoiN2MyZWNkMDdmMTU1NjQ4NDMxZTBmOTRiODkyNDdkNzEzYzU3ODZlMWU3M2U5NTNmMmZlN2VjYTM5NTM0Y2Q2ZCIsIm9yZ05hbWUiOiJPcmcxIiwiaWF0IjoxNTI0NjY4Nzg2fQ.Hz0rasJjTegWjMYVqix-whQ0TgoaaD755nHkA2vUjzU";
 
 function start_server(app, port) {
     app.listen(port, function() {
@@ -489,7 +490,7 @@ function QueryAllEvents(req, res) {
     var args = {
         data: allData,
         headers: { 
-            "authorization" : "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MjQ3MDQ3ODYsInVzZXJuYW1lIjoiN2MyZWNkMDdmMTU1NjQ4NDMxZTBmOTRiODkyNDdkNzEzYzU3ODZlMWU3M2U5NTNmMmZlN2VjYTM5NTM0Y2Q2ZCIsIm9yZ05hbWUiOiJPcmcxIiwiaWF0IjoxNTI0NjY4Nzg2fQ.Hz0rasJjTegWjMYVqix-whQ0TgoaaD755nHkA2vUjzU",
+            "authorization" : SampleToken,
             "Content-Type": "application/json" 
         
         }
