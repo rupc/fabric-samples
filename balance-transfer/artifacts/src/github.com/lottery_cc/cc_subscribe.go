@@ -9,7 +9,7 @@ import (
     pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-// args: (0:function name, 1:hash, 2:member name, 3:current time(tiemstamp))
+// args: (0:function name, 1:Event hash, 2:member name, 3:current time(tiemstamp))
 // Add one member to lottery event specified by manifest hash
 func (t *SimpleChaincode) subscribe(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     fmt.Println("Invoke - subscribe")
@@ -39,7 +39,6 @@ func (t *SimpleChaincode) subscribe(stub shim.ChaincodeStubInterface, args []str
         shim.Error("Already registered member")
     }
 
-
     // Compare current time and due date
     iCurr, _ := strconv.Atoi(args[3])
     iDue, _ := strconv.Atoi(le.Duedate)
@@ -55,18 +54,25 @@ func (t *SimpleChaincode) subscribe(stub shim.ChaincodeStubInterface, args []str
         currOfMembers = len(strings.Split(",", le.MemberList))
     }
 
+    fmt.Printf("currOfMembers: %d\n", currOfMembers)
     // Check the number of members exceeds max#
     maxMembers, _ := strconv.Atoi(le.NumOfMembers)
     if !(currOfMembers < maxMembers) {
         return shim.Error("Maximum members registered")
     }
 
-    // Add a member to lottery event
+    // Add a member to lottery event and update registered num
     if le.MemberList == "UNDEFINED" {
         le.MemberList = args[2]
     } else {
         le.MemberList += "," + args[2]
     }
+
+    kRegisted, err := strconv.Atoi(le.NumOfRegistered)
+    le.NumOfRegistered = strconv.Itoa(kRegisted + 1)
+
+    // kRegisted := currOfMembers + 1
+    fmt.Printf("NumOfRegistered: %s\n", le.NumOfRegistered)
 
     fmt.Printf("%v\n", le)
 

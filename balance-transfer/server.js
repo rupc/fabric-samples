@@ -8,7 +8,7 @@ var moment = require('moment');
 var secureRandom = require('secure-random');
 var jsonfile = require('jsonfile');
 var cmd=require('node-cmd');
-
+var sleep = require('sleep');
 var crypto = require('crypto');
 const commandLineArgs = require('command-line-args');
 
@@ -23,6 +23,7 @@ const cmd_options = commandLineArgs(optionDefinitions);
 var Client = require('node-rest-client').Client;
  
 var client = new Client();
+var subscribeClient = new Client();
 
 var bodyParser = require('body-parser');
 const winston = require('winston');
@@ -48,12 +49,13 @@ var getScript = require("./default-script.js");
 var appPort = 1185;
 
 var SDKWebServerAddress = "http://localhost:4000";
-var SampleToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MjQ3MDQ3ODYsInVzZXJuYW1lIjoiN2MyZWNkMDdmMTU1NjQ4NDMxZTBmOTRiODkyNDdkNzEzYzU3ODZlMWU3M2U5NTNmMmZlN2VjYTM5NTM0Y2Q2ZCIsIm9yZ05hbWUiOiJPcmcxIiwiaWF0IjoxNTI0NjY4Nzg2fQ.Hz0rasJjTegWjMYVqix-whQ0TgoaaD755nHkA2vUjzU";
+var TokenForServer;
 
 function start_server(app, port) {
     app.listen(port, function() {
         logger.info('Server is now listening on '+port);
     });
+    InitServerToken();
 }
 
 // Cross domain issue fixed. Referenced following link.
@@ -82,6 +84,7 @@ app.use("/lib", express.static(__dirname + "/lib"));
 app.use("/style", express.static(__dirname + "/style"));
 app.use("/font-awesome-4.5.0", express.static(__dirname + "/templatemo_485_rainbow/font-awesome-4.5.0/"));
 app.use("/css", express.static(__dirname + "/templatemo_485_rainbow/css/"));
+app.use("/load-awesome", express.static(__dirname + "/load-awesome/css/"));
 app.use("/js", express.static(__dirname + "/templatemo_485_rainbow/js/"));
 app.use("/img", express.static(__dirname + "/templatemo_485_rainbow/img/"));
 app.use("/tabulator/*", express.static(__dirname + "/tabulator/*"));
@@ -115,33 +118,75 @@ app.get('/open-lottery.html', function(req, res) {
 
 var UserInfoTable = [];
 
-app.post('/subscribe', function(req, res) {
-    logger.info("/subscribe")
-    var functionName = req.body.functionName;
-    var lotteryName = req.body.lotteryName;
-    var participantName = req.body.participantName;
-    logger.info(lotteryName + " " + participantName);
-
-    const hash = crypto.createHash('sha256');
-    hash.update(participantName);
-    // hash for avoiding UTF8-Encoding
-    var identityHash = hash.digest('hex');
-    logger.info(identityHash);
+function GetTokenFromSDKServer(identity, orgName) {
+    var token, message, secret;
+    logger.info("Request token from SDK Server");
     var allData = {
-        "username" : identityHash,
-        "orgName" : "Org1",
+        "username" : identity,
+        "orgName" : orgName
     };
 
-    var randomarray  = secureRandom.randomUint8Array(10)
+    var args = {
+        data: allData,
+        headers: { "Content-Type": "application/json" }
+    };
+
+    client.post(SDKWebServerAddress + "/users", args, function (data, response) {
+        token = data.token;
+        message = data.message;
+        secret = data.secret;
+        logger.info("Token from REST-API", data.token);
+        TokenForServer = "Bearer " + data.token;
+    });
+}
+
+async function InitServerToken() {
+    GetTokenFromSDKServer("LotteryServer", "Org1");
+}
+
+function GetIdentityHash(participantName) {
+    const hash = crypto.createHash('sha256');
+    hash.update(participantName);
+    return hash.digest('hex');
+}
+
+function GetRandomNonceStr(len) {
+    var randomarray  = secureRandom.randomUint8Array(len);
     var nonce = "";
     for (var i = 0; i < randomarray.length; i++) {
         nonce += randomarray[i].toString(16);
     }
+    return nonce;
+}
+
+app.post('/subscribe', function(req, res) {
+    logger.info("/subscribe")
+    // Unpack parameters
+    var functionName = req.body.functionName;
+    var lotteryName = req.body.lotteryName;
+    var participantName = req.body.participantName;
+    var eventHash = "" + req.body.eventHash;
+
+
+    // Get cryptogrphaic info
+    var identityHash = "" + GetIdentityHash(participantName);
+    var nonce = "" + GetRandomNonceStr(10);
+
+    logger.info("eventHash", eventHash);
+    logger.info("lotteryName", lotteryName);
+    logger.info("participantName", participantName);
+    logger.info("identityHash", identityHash);
+    logger.info("nonce", nonce);
 
     // REST API 호출...
     // set content-type header and data as json in args parameter 
+    var headerData = {
+        "username" : identityHash,
+        "orgName" : "Org1",
+    };
+
     var args = {
-        data: allData,
+        data: headerData,
         headers: { "Content-Type": "application/json" }
     };
 
@@ -149,6 +194,7 @@ app.post('/subscribe', function(req, res) {
     var message;
     var secret;
 
+    // Get user token
     client.post(SDKWebServerAddress + "/users", args, function (data, response) {
         // parsed response body as js object 
         // console.log(data);
@@ -157,15 +203,44 @@ app.post('/subscribe', function(req, res) {
         token = data.token;
         message = data.message;
         secret = data.secret;
-        logger.log(token, message, secret);
+        
+        logger.info(token, message, secret);
+    });
 
+    // args[1] : Event hash (event identity) from client
+    // args[2] : Member name(or identity) from client
+    // args[3] : current timestamp from client
+    var current_ts = "" + Math.floor(Date.now() / 1000);
+    var allData1 = {
+        "peers" : ["peer0.org1.example.com","peer1.org1.example.com"],
+        "fcn" : "invoke",
+        "args" : ["subscribe", eventHash, identityHash, current_ts],
+    };
 
-        res.write(token);
+    var args1 = {
+        data: allData1,
+        headers: { 
+            "Authorization" : TokenForServer,
+            "Content-Type": "application/json" }
+    };
+
+    // Subscribe given user
+    // sleep.sleep(1);
+    client.post(SDKWebServerAddress + "/channels/mychannel/chaincodes/lottery", args1, function (data, response) {
+        // parsed response body as js object 
+        // console.log(data);
+        // raw response 
+        // console.log(response);
+        // token = data.token;
+        // message = data.message;
+        // secret = data.secret;
+        
+        // logger.info(token, message, secret);
+      
+        res.write(identityHash);
         res.end();
     });
-// `curl -s -X POST http://localhost:4000/users -H "content-type: application/x-www-form-urlencoded" -d 'username=Jim&orgName=Org1'`
 
-    // Promise 써서 동기적으로 바꿔야할듯
 
         var useridentity = {
             lotteryName_ : lotteryName,
@@ -481,16 +556,16 @@ if (cmd_options.blockchain) {
 
 
 function QueryAllEvents(req, res) {
-    var allData = {
+    var headerData = {
         "peers" : ["peer0.org1.example.com","peer1.org1.example.com"],
         "fcn" : "invoke",
         "args":["query_all_lottery_event_hash"]
     };
 
     var args = {
-        data: allData,
+        data: headerData,
         headers: { 
-            "authorization" : SampleToken,
+            "authorization" : TokenForServer,
             "Content-Type": "application/json" 
         
         }
@@ -510,7 +585,8 @@ function QueryAllEvents(req, res) {
             // s += String.fromCharCode(c);
         // }
         console.log(payload);
-        res.write("왜안돼니?");
+        res.write(payload);
         res.end();
     });
 }
+

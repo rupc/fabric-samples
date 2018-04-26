@@ -149,8 +149,8 @@ curl -s -X POST \
   -H "content-type: application/json" \
   -d '{
 	"peers": ["peer0.org1.example.com","peer1.org1.example.com"],
-	"chaincodeName":"mycc",
-	"chaincodePath":"github.com/example_cc/go",
+	"chaincodeName":"lottery",
+	"chaincodePath":"github.com/lottery_cc",
 	"chaincodeType": "golang",
 	"chaincodeVersion":"v0"
 }'
@@ -164,7 +164,7 @@ curl -s -X POST \
   -H "content-type: application/json" \
   -d '{
 	"peers": ["peer0.org1.example.com","peer1.org1.example.com"],
-	"chaincodeName":"mycc",
+	"chaincodeName":"lottery",
 	"chaincodePath":"$PWD/artifacts/src/github.com/example_cc/node",
 	"chaincodeType": "node",
 	"chaincodeVersion":"v0"
@@ -180,10 +180,10 @@ curl -s -X POST \
   -H "content-type: application/json" \
   -d '{
 	"peers": ["peer0.org1.example.com","peer1.org1.example.com"],
-	"chaincodeName":"mycc",
+	"chaincodeName":"lottery",
 	"chaincodeVersion":"v0",
 	"chaincodeType": "golang",
-	"args":["a","100","b","200"]
+	"args":[""]
 }'
 ```
 **NOTE:** *chaincodeType* must be set to **node** when node.js chaincode is used
