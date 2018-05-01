@@ -35,6 +35,7 @@ http://www.templatemo.com/tm-485-rainbow
 
     <script type="text/javascript" charset="utf-8" src="https://unpkg.com/sweetalert2@7.19.1/dist/sweetalert2.all.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/promise-polyfill@7.1.0/dist/promise.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/sjcl/1.0.7/sjcl.min.js"></script>
 
     <script type="text/javascript" charset="utf-8">
         function showSpinner() {
@@ -56,7 +57,6 @@ http://www.templatemo.com/tm-485-rainbow
                 u = u.substring(0, u.length - 8);
                 return u;
             }
-            hideSpinner();
 
             $.ajax({
                 url: "http://141.223.121.175:1185" + "/query-all-events",
@@ -76,11 +76,14 @@ http://www.templatemo.com/tm-485-rainbow
                 var initTabledata = [ ];
                 for (var i = 0; i < res.length; ++i) {
                     var obj = JSON.parse(res[i]);
+                    var tsAnnouncementDate = obj.AnnouncementDate;
+
                     obj.Duedate = timestampToDatetime(obj.Duedate);
                     obj.IssueDate = timestampToDatetime(obj.IssueDate);
                     obj.AnnouncementDate = timestampToDatetime(obj.AnnouncementDate);
                     obj.WinnerList = obj.WinnerList.trim().split(",");
                     obj.EventHash = obj.EventHash;
+
 
                     for (var j = 0; j < obj.WinnerList.length; ++j) {
                         obj.WinnerList[j] = obj.WinnerList[j].trim();
@@ -90,7 +93,8 @@ http://www.templatemo.com/tm-485-rainbow
                     initTabledata[i] = {
                         id:(i+1),
                         name: obj.EventName,
-                        announceData: obj.AnnouncementDate,
+                        announceDate: obj.AnnouncementDate,
+                        tsAnnouncementDate: tsAnnouncementDate,
                         numOfRegistered: obj.NumOfRegistered,
                         numOfWinners: obj.NumOfWinners,
                         subscribe: 1, check: 1, verify:1,
@@ -111,19 +115,37 @@ http://www.templatemo.com/tm-485-rainbow
 
                     // Redrwa the table
                     $("#allQueryTableReserved").tabulator("setData", initTabledata);
+                    hideSpinner();
                 },
                 error: function() {
                     Swal("Fail");
+                    hideSpinner();
                 }
             });
 			var printIcon = function(cell, formatterParams){ //plain text value
-				return "<i class='fa fa-file'></i>";
+				return "<i class='fa fa-file'  style='font-size:28px;color:BlueViolet '></i>";
+			};
+			var printCheckVerify = function(cell, formatterParams){ //plain text value
+				return "<i class='fa fa-check-square-o'  style='font-size:28px;color:BlueViolet '></i>";
 			};
 
+			var printScriptIcon = function(cell, formatterParams){ //plain text value
+				return "<i class='fa fa-file-code-o'; style='font-size:28px;color:BlueViolet ' ></i>";
+			};
+			var printDrawIcon = function(cell, formatterParams){ //plain text value
+				return "<i class='fa fa-chain'; style='font-size:28px;color:BlueViolet'></i>";
+			};
+			var printSubscribeIcon = function(cell, formatterParams){ //plain text value
+				return "<i class='fa fa-plus-square'  style='font-size:28px;color:BlueViolet '></i>";
+			};
+
+
+
             $("#allQueryTableReserved").tabulator({
-                layout:"fitColumns",
-                tooltips:true,
-                addRowPos:"top",
+                // layout:"fitDataFill",
+                // tooltips:true,
+                // responsiveLayout:"collapse",
+                // addRowPos:"top",
                 //                history:true,
 //                pagination:"local",
 //                paginationSize:7,
@@ -132,14 +154,23 @@ http://www.templatemo.com/tm-485-rainbow
                 initialSort:[
                     {column:"name", dir:"asc"},
                 ],
-                columns:[ //Define Table Columns
+                columns:[ // Define Table Columns
+
+                    // {formatter:"responsiveCollapse", width:30, minWidth:30, align:"center", resizable:false, headerSort:false},
                     {title:"행사 이름", field:"name", width:"18px"},
-                    {title:"예정발표일", field:"announceData", align:"center", sorter:"date", width:"10px"},
-                    {title:"참가자 수", field:"numOfRegistered", align:"center", width:"8px"},
-                    {title:"우승자 수", field:"numOfWinners", align:"center", width:"8px"},
-                    {title:"참여", field:"subscribe", formatter:"tickCross", align:"center", width:"8px", 
+                    {title:"예정발표일", field:"announceDate", align:"center", sorter:"date", width:"12px"},
+                    {title:"예정발표일(타임스탬프)", field:"tsAnnounceDate", align:"center", sorter:"date", width:"12px"},
+                    {title:"참가자 수", field:"numOfRegistered", align:"center", width:"9px"},
+                    {title:"우승자 수", field:"numOfWinners", align:"center", width:"9px"},
+                    {title:"참여", field:"subscribe", formatter:printSubscribeIcon, align:"center", width:"9px", 
                         cellClick:function(e, cell){
                             var lotteryName = cell.getRow().getData().name;
+                            var ts = cell.getRow().getData().tsAnnouncementDate;
+                            var curr_ts = Math.floor(Date.now() / 1000);
+                            if (curr_ts >= ts) {
+                                Swal({type:"error", title:"참여 기한이 마감되었습니다"});
+                                return;
+                            }
                             Swal({
                                 title: '(' + lotteryName + ')' + '\n이름을 입력하세요',
                                 type: 'question',
@@ -174,9 +205,9 @@ http://www.templatemo.com/tm-485-rainbow
                                         success: function(responseData) {
                                             Swal(
                                                 '참여 성공',
-                                                "\"" + participantName + "\" 님이 " 
-                                                + "\"" + lotteryName + "\"" + ' 행사에 등록!'
-                                                + "<br/>인증토큰" + responseData,
+    "<b>\"" + participantName + "\" </b>님이 " 
+    + "<b>\"" + lotteryName + "\"" + ' </b>행사에 등록!'
+    + "<br/>인증토큰" + responseData + "<br/><b><font color=\"red\">인증토큰은 당첨자임를 증명하기 위해서 반드시 갖고 있어야 합니다</font><br/>(복사해두세요)</b>",
                                                 'success'
                                             )
                                             hideSpinner();
@@ -200,60 +231,186 @@ http://www.templatemo.com/tm-485-rainbow
                             // 기존의 subscribe 함수 호출
                         }
                     },
-                    {title:"확인", field:"check", formatter:"tickCross", align:"center", width:"8px",
-                        cellClick:function(e, cell){
-                            alert("Printing row data for: " + cell.getRow().getData().name)
-                            // check 함수 호출
-                            // 여기서 blockchain.info에서 타겟 블록 읽고나서 우승자 결정하기.
+
+                    {title:"추첨", field:"draw", formatter:printDrawIcon, align:"center", width:"8px",
+                        cellClick:function(e, cell) {
+                            swal("추첨하기");
                         }
                     },
-                    {title:"검증", field:"verify",formatter:"tickCross", align:"center", width:"8px",
-                        cellClick:function(e, cell){
-                            alert("Printing row data for: " + cell.getRow().getData().name);
-                            // 기존의 subscribe 함수 호출
+
+                    {title:"결과 확인", field:"check", formatter:printCheckVerify, align:"center", width:"8px",
+                        cellClick:function(e, cell) {
+                            var lotteryName = cell.getRow().getData().name;
+                            var targetBlockNumber = cell.getRow().getData.targetBlock;
+                            var announceDate = cell.getRow().getData().announceDate;
+                            swal("("+ lotteryName + ")</br>결과 확인</br>" + cell.getRow().getData().winnerList);
                         }
                     },
+
+                    {title:"검증", field:"verify",formatter:printCheckVerify, align:"center", width:"8px",
+                        cellClick:function(e, cell){
+                            var lotteryName = cell.getRow().getData().name;
+                            var targetBlock = cell.getRow().getData().targetBlock;
+                            var participantList = cell.getRow().getData().participantList;
+                            var kRegistered = cell.getRow().getData().numOfRegistered;
+                            if(kRegistered == 0) {
+                                swal({type:"error", title:"참가자가 아무도 없습니다"});
+                                return;
+                            } 
+
+                            // Validate appropriate date
+                            var ts = cell.getRow().getData().tsAnnouncementDate;
+                            var curr_ts = Math.floor(Date.now() / 1000);
+                            if (curr_ts <= ts) {
+                                Swal({type:"error", title:"발표일이 지나고 결과 추첨이 되어야 검증을 수행할 수 있습니다"});
+                                return;
+                            }
+
+                            var numOfWinners = cell.getRow().getData().numOfWinners;
+                            var verification = false;
+                            // Define query block func
+
+                            var queryBlock = function(height) {
+                                var blockQueryBaseURL = "https://api.blockcypher.com/v1/btc/main/blocks/";
+                                $.ajax({
+                                    url: blockQueryBaseURL + height,
+                                    type: "GET", 
+                                    dataType: 'json',
+                                    contentType: 'text/plain',
+                                    crossDomain:true,
+                                }).done(function(json) {
+                                    var time = json.time;
+                                    var blockHash = json.hash;
+                                    console.log(blockHash);
+                                    var prev_block = json.prev_block;
+                                    // split participantList into array
+                                    var participantArray = participantList.split(",").filter(function(x) {
+                                        return (x.length > 0) && (x !== (undefined || null || " " || ' ' || '' || ""));
+                                    });
+
+                                    participantArray = participantArray.filter(item => item !== '');
+                                    for (var i = 0; i < participantArray.length; ++i) {
+                                        participantArray[i] = participantArray[i].replace(/ /g, '');
+// if (participantArray[i].length )
+                                        console.log(participantArray[i]);
+                                    }
+                                    var parseHexString = function(str) { 
+                                        var result = [];
+                                        while (str.length >= 8) { 
+                                            result.push(parseInt(str.substring(0, 8), 16));
+
+                                            str = str.substring(8, str.length);
+                                        }
+
+                                        return result;
+                                    }
+                                    var numOfParticipants = participantArray.length;
+                                    var concatenated = "";
+                                    var randomBits = "";
+                                    console.log(blockHash);
+                                    var j, x, i;
+                                    var outputText = "";
+                                    for (i = numOfParticipants - 1; i > 0; i--) {
+                                        concatenated = blockHash + "" + i;
+                                        // var randomseed = parseHexString(sjcl.hash.sha256.hash(concatenated));
+                                        var randomseed = sjcl.hash.sha256.hash(concatenated);
+                                        console.log(randomseed);
+                                        j = Math.floor(randomseed * (i + 1));
+                                        x = participantArray[i];
+                                        participantArray[i] = participantArray[j];
+                                        participantArray[j] = x;
+                                    }
+                                    // Error 왜 undefined가 생기지?
+                                    var participantArray = participantList.split(",").filter(function(x) {
+                                        return (x.length > 0) && (x !== (NaN || undefined || null || " " || ' ' || '' || ""));
+                                    });
+                                    for (var i = 0; i < participantArray.length; ++i) {
+                                        participantArray[i] = participantArray[i].replace(/ /g, '');
+                                        participantArray[i] = participantArray[i].replace(/\n/g, '');
+                                        // if (participantArray[i].length )
+                                        console.log(participantArray[i]);
+                                    }
+                                    console.log(participantArray);
+
+                                    var firstNchars = 10;
+                                    outputText = "처음 " + firstNchars + " 글자까지만 표현\n"
+                                    for (i = 0; i < numOfWinners; ++i) {
+                                        outputText += "<font color=\"red\">" + (i+1) + "</font> :" + participantArray[i].substring(0, 10) + "\n\n";
+                                    }
+
+                                    swal({
+                                      title: outputText,
+                                      // text: outputText ,
+                                      width: 400,
+                                      // height: 300,
+                                      padding: 10,
+                                      backdrop: `
+                                        rgba(0,0,123,0.4)
+                                        url("/images/Congratst.gif")
+                                        left top
+                                        no-repeat
+                                      `
+                                    });
+
+                                    return json;
+                            }).fail(function(textStatus, error) {
+                                console.log("Error: " + textStatus + " " + error);
+                                swal({type:"error", title: "타겟 블록이 생성되지 않았습니다"});
+
+                            });};
+                            // var block = queryBlock(400000);
+                            var block = queryBlock(targetBlock);
+                            // };
+                    }},
+
                     {title:"정보", formatter:printIcon, field:"info", align:"center", width:"8px",
                         cellClick:function(e, cell) {
-swal('추첨 행사 정보', 
-"<b>행사 이름</b>: " + cell.getRow().getData().name + "</br>" +
-"<b>타겟 블록</b> : " + cell.getRow().getData().targetBlock+ "</br>" +
-"<b>참여자</b> : "  + cell.getRow().getData().participantList + "</br>" +
-"<b>우승자</b>: " + cell.getRow().getData().winnerList + "</br>" +
-"<b>발행일</b> : " + cell.getRow().getData().issueDate  + "</br>" +
-"<b>마감일</b> : " + cell.getRow().getData().dueDate  + "</br>" + 
-"<b>이벤트해시</b>: " + cell.getRow().getData().eventHash + "</br>" +
-"<b>랜덤키</b> : " + cell.getRow().getData().verifiableKey + "</br>" +""
-);
+                            swal('추첨 행사 정보', 
+                            "<b>행사 이름</b>: " + cell.getRow().getData().name + "</br>" +
+                            "<b>타겟 블록</b> : " + cell.getRow().getData().targetBlock+ "</br>" +
+                            "<b>참여자</b> : "  + cell.getRow().getData().participantList + "</br>" +
+                            "<b>우승자</b>: " + cell.getRow().getData().winnerList + "</br>" +
+                            "<b>등록일</b> : " + cell.getRow().getData().issueDate  + "</br>" +
+                            "<b>마감일</b> : " + cell.getRow().getData().dueDate  + "</br>" + 
+                            "<b>이벤트해시</b>: " + cell.getRow().getData().eventHash + "</br>" +
+                            "<b>랜덤키</b> : " + cell.getRow().getData().verifiableKey + "</br>" +""
+                            );
                         }
                     },
+
                     {title:"이벤트해시", field:"eventHash", align:"center", width:"12px"},
                     {title:"상태", field:"status", align:"center", width:"8px"},
                     {title:"타겟 블록", field:"targetBlock", align:"center", width:"8px"},
-                    {title:"발행일", field:"issueDate", align:"center", width:"8px"},
+                    {title:"등록일", field:"issueDate", align:"center", width:"8px"},
                     {title:"마감일", field:"dueDate", align:"center", width:"8px"},
                     {title:"랜덤키", field:"verifiableKey", align:"center", width:"8px"},
                     {title:"우승자", field:"winnerList", align:"center", width:"8px"},
                     {title:"참여자", field:"participantList", align:"center", width:"8px"},
-                    {title:"추첨스크립트", field:"script", align:"center", width:"8px"},
+                    {title:"추첨 스크립트", field:"script",formatter:printScriptIcon, align:"center", width:"8px",
+                        cellClick:function(e, cell){
+                            var lotteryScript = cell.getRow().getData().script;
+                            swal(lotteryScript);
+                        }
+                    },
                 ],
             });
 
             var initTabledata = [
-                {id:1, name:"불러오는 중", announceData:"불러오는 중" }
-               // {id:1, name:"sslab 친목", announceData:"2018/04/27 12:30", numOfWinners: 3, subscribe:1, check:1, verify:1},
-               // {id:2, name:"포스텍 세미나", announceData:"2018/05/10 12:30", numOfWinners: 20, subscribe:1, check:1, verify:1},
-               // {id:3, name:"블록체인 세미나", announceData:"2018/05/12 14:00", numOfWinners: 5, subscribe:1, check:1, verify:1},
-               // {id:3, name:"테스트", announceData:"2018/05/12 14:00", numOfWinners: 5, subscribe:1, check:1, verify:1},
+                {id:1, name:"불러오는 중", announceDate:"불러오는 중" }
+               // {id:1, name:"sslab 친목", announceDate:"2018/04/27 12:30", numOfWinners: 3, subscribe:1, check:1, verify:1},
+               // {id:2, name:"포스텍 세미나", announceDate:"2018/05/10 12:30", numOfWinners: 20, subscribe:1, check:1, verify:1},
+               // {id:3, name:"블록체인 세미나", announceDate:"2018/05/12 14:00", numOfWinners: 5, subscribe:1, check:1, verify:1},
+               // {id:3, name:"테스트", announceDate:"2018/05/12 14:00", numOfWinners: 5, subscribe:1, check:1, verify:1},
             ];
 
             // Re draw the table with new data from server
             $("#allQueryTableReserved").tabulator("setData", initTabledata);
-
+            showSpinner();
             // Hide unnecesary columns to user
             if (true) {
                 $("#allQueryTableReserved").tabulator("hideColumn", "eventHash");
-                $("#allQueryTableReserved").tabulator("hideColumn", "script");
+                // $("#allQueryTableReserved").tabulator("hideColumn", "script");
+                $("#allQueryTableReserved").tabulator("hideColumn","tsAnnounceDate");
                 $("#allQueryTableReserved").tabulator("hideColumn", "status");
                 $("#allQueryTableReserved").tabulator("hideColumn", "targetBlock");
                 $("#allQueryTableReserved").tabulator("hideColumn","issueDate");

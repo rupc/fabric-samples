@@ -99,17 +99,17 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
     sampleEnded := lottery_event {
         Status: "REGISTERED",
         InputHash: "435df910d961f25d051a71e1daeed210cb43c31b4e92bf241a7a044bdebe50a5",
-        EventName: "블록체인 세미나 추첨",
+        EventName: "주간 블록체인 미팅 추첨 데모",
         IssueDate: "1498601618",
-        Duedate: "1524838800",
-        AnnouncementDate: "1524838800",
-        FutureBlockHeight: "520000",
+        Duedate: "1524828600",
+        AnnouncementDate: "1524828600",
+        FutureBlockHeight: "520075",
         NumOfMembers: "1000",
         NumOfWinners: "3",
-        NumOfRegistered: "4",
+        NumOfRegistered: "0",
         RandomKey: "26047126683174221326655007522109018381",
         VerifiableRandomkey: "UNDEFINED" ,
-        MemberList: "t1,t2,t3,t4",
+        MemberList: "",
         WinnerList: "UNDEFINED",
         Script: "sampleEnded script1",
     }
@@ -117,27 +117,26 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
     sampleCheck := lottery_event {
         Status: "ANNOUNCED",
         InputHash: "e284211d3c91622692531bfd860a438d21ee6a04a2f941c970d30b5bab214a30",
-        EventName: "POSTECH-SEMINAR 추첨",
+        EventName: "블록체인 세미나 추첨 행사",
         IssueDate: "1497076380", // 2017년 5월 10일 토요일 오후 3:33:00 GMT+09:00
-        Duedate: "1526868000", // 2017년 5월 15일 목요일 오후 3:33:00 GMT+09:00
-        AnnouncementDate: "1526868000", // 2017년 5월 30일 금요일 오후 3:30:00
+        Duedate: "1526868000",
+        AnnouncementDate: "1526868000",
         FutureBlockHeight: "673530",
         NumOfMembers: "1000",
         NumOfWinners: "2",
         NumOfRegistered: "5",
         RandomKey: "45432542334432543212154312",
         VerifiableRandomkey: "UNDEFINED" ,
-        MemberList: `zQcVvDw3GnCtLlE7kGaJh+DIywBPSeWAIvwcqqZLPGw,
-                    3vp/4SY25oVCWmZys0ON84fzBoE8xhWFYEQ//QLwqYU=,
-                    RneBijcu1uMeNgPjmJcEf/FYUos/BUcPnHQt/M7+Nhg=,
-                    GFlVlk0WHnBUqbGBRJpi+Smb71iWNKwCVkzHAUuyKqo=,
-                    y6ifF4M2s3szUOu/gai4VGa8jbLQEbq0UPgce8ZqD6o=,`,
+        MemberList: `4E7288FA37135F7B50234654C56CEF500130F0D9C961481CF4440C081C65F1E7,
+                    AA97302150FCE811425CD84537028A5AFBE37E3F1362AD45A51D467E17AFDC9C,
+                    143AE4AC2E85109A45A873C517D28369AF4D9737F11326EC2CCBD251D3F76040,
+                    6FD79214AEE801974E7C3E71130970E12A1E24042C6C0046B5EA6C20A2195321,
+                    6116C93BF51548A6E31EAC22088302B789714FE03DC5EC378BCB02479D637C4E`,
         WinnerList: "UNDEFINED",
-        Script: "sample script2",
-        /* Script: `
+        Script: `
         func do_determine_winner(le lottery_event) []int {
-            // var im InputManifest = convert_lottery_to_im(le)
-            // print_im(im)
+            var im InputManifest = convert_lottery_to_im(le)
+            print_im(im)
             var block Block
             var winner_list []int
             var block_hash string
@@ -156,8 +155,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
             random_key, _ := strconv.ParseUint(le.RandomKey, 10, 64)
             random_key_bit_array := gen_random_bit_array(random_key)
 
-            // block = get_block_by_height(om.future_blk_height)
-            // test latestblock hash first
+            block = get_block_by_height(om.future_blk_height)
+            test latestblock hash first
             block = get_latest_block()
             block_hash = block.hash
 
@@ -168,7 +167,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
             sig := hmac.New(sha256.New, []byte(random_key_bit_array))
             sig.Write([]byte(block_hash))
 
-            // random bits is built from random key
+            random bits is built from random key
             random_bits := hex.EncodeToString(sig.Sum(nil))
 
             fmt.Printf("random bits from hmac: %s\n", random_bits)
@@ -176,7 +175,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
             num_winners, _ := strconv.Atoi(le.NumOfWinners)
             num_members, _ := strconv.Atoi(le.NumOfMembers)
 
-            //
+            
             var concat string = ""
             var lucky_map map[int]string
             lucky_map = make(map[int]string)
@@ -191,8 +190,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
                 lucky_map[idx] = index_hash
             }
 
-            // Sort by value. References follwing link
-            // http://ispycode.com/GO/Sorting/Sort-map-by-value
+            Sort by value. References follwing link
+            http://ispycode.com/GO/Sorting/Sort-map-by-value
             hack := make(map[string]int)
             hackkeys := []string{}
 
@@ -202,14 +201,14 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response  {
             }
             sort.Strings(hackkeys)
 
-            // print winners
+            print winners
             for i := 0; i < num_winners; i++ {
                 fmt.Printf("%dth: %s\n", hack[hackkeys[i]], hackkeys[i])
                 winner_list = append(winner_list, hack[hackkeys[i]])
             }
 
             return winner_list
-        }`, */
+        }`, 
     }
 
     jsonBytes, err := json.Marshal(sampleRegistered)

@@ -90,6 +90,8 @@ app.use("/img", express.static(__dirname + "/templatemo_485_rainbow/img/"));
 app.use("/tabulator/*", express.static(__dirname + "/tabulator/*"));
 app.use("/tabulator/dist/css/tabulator.min.css", express.static(__dirname + "/tabulator/dist/css/tabulator.min.css"));
 app.use("/tabulator/dist/js/tabulator.min.js", express.static(__dirname + "/tabulator/dist/js/tabulator.min.js"));
+app.use("/sjcl.js", express.static(__dirname + "/sjcl.js"));
+app.use("/images", express.static(__dirname + "/images"));
 
 app.get('/', function(req, res){
     response_client_html(res, "templatemo_485_rainbow/index.html");
